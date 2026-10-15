@@ -1,0 +1,14 @@
+import {readFile,writeFile,mkdir,rm} from 'node:fs/promises';
+import {build} from 'esbuild';
+import {CLIENT_TOOLS} from '../shared/agent-config.mjs';
+const assets={};
+for(const name of ['index.html','styles.css','interface.css','austria.css'])assets['/'+name]=await readFile('client/'+name,'utf8');
+assets['/control']=await readFile('client/control.html','utf8');
+assets['/control/']=assets['/control'];
+assets['/control.js']=await readFile('client/control.js','utf8');
+const bundled=await build({entryPoints:['client/agent-ui.js'],bundle:true,format:'esm',target:['es2022'],outfile:'agent.js',write:false,minify:true,loader:{'.png':'dataurl','.svg':'dataurl'},legalComments:'none'});
+for(const file of bundled.outputFiles)assets['/'+file.path.split('/').at(-1)]=file.text;
+const prompt=await readFile('agent/system-prompt.md','utf8');
+assets['/agent-configuration.json']=JSON.stringify({name:'Governator',system_prompt:prompt,client_tools:CLIENT_TOOLS},null,2);
+await mkdir('worker',{recursive:true});await writeFile('worker/index.js',`const assets=${JSON.stringify(assets)};\n`+await readFile('worker/handler.js','utf8'));
+await rm('dist',{recursive:true,force:true});await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});await writeFile('dist/server/index.js',await readFile('worker/index.js'));await writeFile('dist/.openai/hosting.json',await readFile('.openai/hosting.json'));console.log('Built ElevenLabs Agent interface and Worker');

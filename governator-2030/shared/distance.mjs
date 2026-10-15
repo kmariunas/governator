@@ -1,0 +1,1 @@
+export function distanceKm(a,b){const rad=n=>n*Math.PI/180;return 6371*2*Math.asin(Math.min(1,Math.sqrt(Math.sin(rad(b.lat-a.lat)/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lon-a.lon)/2)**2)))}
